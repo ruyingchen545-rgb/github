@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<title>Tutor V4 — ChatGPT Bridge</title>
+<style>
+:root{--bg:#f5f5f2;--card:#fff;--text:#111;--muted:#777;--line:#deded9;--soft:#f2f2ef;--danger:#a10d24}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--bg);color:var(--text)}
+button,input,textarea,select{font:inherit}
+button{-webkit-tap-highlight-color:transparent}
+.app{max-width:980px;margin:auto;min-height:100vh;background:#fff}
+.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);backdrop-filter:blur(14px);border-bottom:1px solid var(--line);padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{font-size:25px;font-weight:850;letter-spacing:-.055em}
+.muted{color:var(--muted);font-size:13px;line-height:1.5}
+.content{padding:22px 18px 100px}
+h1{letter-spacing:-.04em}
+h2.section-title{font-size:12px;letter-spacing:.14em;text-transform:uppercase;margin:0;color:#555}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.card{border:1px solid var(--line);background:var(--card);border-radius:17px;padding:16px}
+.student{cursor:pointer;transition:.15s transform,.15s border-color}
+.student:active{transform:scale(.985)}
+.student:hover{border-color:#111}
+.name{font-size:19px;font-weight:760;letter-spacing:-.025em}
+.pill{display:inline-flex;align-items:center;border:1px solid #d4d4ce;border-radius:99px;padding:4px 8px;font-size:11px;margin:8px 5px 0 0;background:#fff}
+.btn{border:1px solid #111;background:#111;color:#fff;border-radius:12px;padding:10px 13px;font-weight:680;cursor:pointer}
+.btn.alt{background:#fff;color:#111}
+.btn.soft{background:var(--soft);border-color:var(--soft);color:#111}
+.btn.small{padding:7px 10px;font-size:12px;border-radius:10px}
+.btn.danger{background:#fff;color:var(--danger);border-color:#d8aab2}
+.btn:active{transform:translateY(1px)}
+.section{margin-top:28px}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:11px}
+.empty{border:1px dashed #bbb;border-radius:17px;padding:32px 16px;text-align:center;color:#777}
+.stat{font-size:29px;font-weight:820;letter-spacing:-.04em}
+.statlabel{color:#777;font-size:12px;margin-bottom:5px}
+.detail{display:none}.detail.show{display:block}.home.hide{display:none}
+.search{width:100%;border:1px solid var(--line);border-radius:13px;padding:11px 13px;background:#fafafa;outline:none}
+.search:focus{background:#fff;border-color:#111}
+.classitem{padding:15px 0;border-top:1px solid #eee}
+.classitem:first-child{border-top:0;padding-top:0}
+.classitem:last-child{padding-bottom:0}
+.class-content{white-space:pre-wrap;line-height:1.55;margin:8px 0}
+.inline-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.notearea{width:100%;min-height:110px;border:0;outline:0;resize:vertical;line-height:1.55;background:transparent}
+.checklist{display:grid;gap:8px;margin:12px 0}
+.checkrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #eee}
+.checkrow:last-child{border-bottom:0}
+.checkrow input{width:18px;height:18px}
+.checkrow.done span{text-decoration:line-through;color:#999}
+.ai{background:#111;color:#fff;border-radius:18px;padding:18px}
+.ai .muted{color:#bbb}
+.ai .btn{background:#fff;color:#111;border-color:#fff}
+.ai-output{margin-top:14px;background:#1b1b1b;border:1px solid #333;border-radius:13px;padding:13px;white-space:pre-wrap;line-height:1.55;font-size:13px;color:#eee;display:none}
+.upload{border:1px dashed #aaa;border-radius:14px;padding:14px}
+.preview-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.preview{aspect-ratio:1;border-radius:11px;object-fit:cover;width:100%;border:1px solid #ddd}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.38);display:none;align-items:flex-end;justify-content:center;z-index:40}
+.modal.show{display:flex}
+.sheet{background:#fff;width:min(720px,100%);max-height:92vh;overflow:auto;border-radius:22px 22px 0 0;padding:20px;padding-bottom:max(20px,env(safe-area-inset-bottom))}
+.sheet h2{margin:0;font-size:20px;letter-spacing:-.025em}
+.field{margin:13px 0}
+.field label{display:block;font-size:11px;font-weight:750;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.field input,.field textarea,.field select{width:100%;border:1px solid #ccc;border-radius:11px;padding:11px;background:#fff;outline:none}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:#111}
+.field textarea{min-height:90px;resize:vertical;line-height:1.5}
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:#111;color:#fff;border-radius:11px;padding:10px 14px;display:none;z-index:80;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.profilebox{white-space:pre-wrap;line-height:1.55}
+.badge{font-size:11px;padding:4px 8px;border-radius:99px;background:#eee}
+.quick{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.toolbar{display:flex;gap:8px;align-items:center}
+.iconbtn{width:38px;height:38px;padding:0;display:grid;place-items:center}
+.hidden{display:none!important}
+@media(min-width:700px){
+  .modal{align-items:center}.sheet{border-radius:22px}
+  .content{padding:30px 30px 110px}.top{padding:17px 30px}
+  .quick{grid-template-columns:repeat(4,1fr)}
+  .preview-grid{grid-template-columns:repeat(6,1fr)}
+}
+
+@media print{
+  body{background:#fff!important}
+  .app{max-width:none}
+  .top,.home,.detail>.btn,.quick,.inline-actions,.upload,.ai,.section:last-child,.no-print{display:none!important}
+  .detail{display:block!important}
+  .content{padding:0!important}
+  .print-only{display:block!important}
+  .print-sheet{font-family:Arial,sans-serif;color:#000;padding:10mm 12mm}
+  .print-sheet h1{font-size:22pt;margin:0 0 3mm}
+  .print-sheet h2{font-size:12pt;border-bottom:1px solid #000;padding-bottom:2mm;margin:7mm 0 3mm}
+  .print-meta{font-size:10pt;margin-bottom:5mm}
+  .print-box{font-size:10.5pt;line-height:1.55;white-space:pre-wrap}
+  .print-class{border-bottom:1px solid #bbb;padding:3mm 0;break-inside:avoid}
+  .print-q{margin:4mm 0;break-inside:avoid}
+}
+.print-only{display:none}
+
+</style>
+</head>
+<body>
+<div class="app">
+<header class="top">
+  <div><div class="brand">Tutor.</div><div class="muted">ChatGPT Bridge · V4</div></div>
+  <div class="toolbar">
+    <button class="btn alt iconbtn" id="exportBtn" title="Export backup">⇩</button>
+    <button class="btn" id="addBtn">+ Student</button>
+  </div>
+</header>
+
+<main class="content">
+<section class="home" id="home">
+  <div>
+    <h1 style="margin:0 0 4px">Students</h1>
+    <div class="muted" id="summary">0 students · 0 classes · 0h</div>
+  </div>
+  <div class="section" style="margin-top:18px">
+    <input class="search" id="search" placeholder="Search student, grade or subject…">
+  </div>
+  <div class="section" style="margin-top:14px">
+    <div class="grid" id="students"></div>
+    <div class="empty" id="empty">No students yet.<br><br><button class="btn" onclick="openStudent()">Add your first student</button></div>
+  </div>
+</section>
+
+<section class="detail" id="detail">
+  <button class="btn alt small" onclick="goHome()">← Students</button>
+
+  <div class="section row between">
+    <div>
+      <h1 id="dName" style="margin:0"></h1>
+      <div class="muted" id="dMeta"></div>
+    </div>
+    <div class="row"><button class="btn alt small" onclick="openPrint()">Print / PDF</button><button class="btn alt small" onclick="editCurrent()">Edit profile</button></div>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="statlabel">Total classes</div><div class="stat" id="dClasses">0</div></div>
+    <div class="card"><div class="statlabel">Total hours</div><div class="stat" id="dHours">0</div></div>
+    <div class="card"><div class="statlabel">Current score</div><div class="stat" id="dScore">—</div></div>
+    <div class="card"><div class="statlabel">Target</div><div class="stat" id="dTarget">—</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2 class="section-title">Profile</h2></div>
+    <div class="card profilebox" id="dProfile">No profile notes yet.</div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2 class="section-title">Quick actions</h2></div>
+    <div class="quick">
+      <button class="btn soft" onclick="openClass()">+ Class</button>
+      <button class="btn soft" onclick="jumpTo('weakSection')">Weaknesses</button>
+      <button class="btn soft" onclick="jumpTo('dictSection')">Dictation</button>
+      <button class="btn soft" onclick="jumpTo('aiSection')">AI Assistant</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2 class="section-title">Classes</h2>
+      <button class="btn small" onclick="openClass()">+ Class</button>
+    </div>
+    <div class="card" id="classList"></div>
+  </div>
+
+  <div class="section" id="weakSection">
+    <div class="section-head"><h2 class="section-title">Weaknesses</h2><span class="badge">autosaved</span></div>
+    <div class="card">
+      <textarea id="weakness" class="notearea" placeholder="Past tense, spelling, reading speed…"></textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2 class="section-title">Next Class Plan</h2><span class="badge">autosaved</span></div>
+    <div class="card">
+      <textarea id="nextPlan" class="notearea" placeholder="Warm-up, review, new content, practice, homework…"></textarea>
+    </div>
+  </div>
+
+  <div class="section" id="dictSection">
+    <div class="section-head">
+      <h2 class="section-title">Next Dictation</h2>
+      <button class="btn alt small" onclick="addDictationItem()">+ Item</button>
+    </div>
+    <div class="card">
+      <div class="muted">Tap an item after the student gets it right. Unchecked items can stay for the next lesson.</div>
+      <div class="checklist" id="dictationList"></div>
+      <div class="row">
+        <button class="btn alt small" onclick="resetDictation()">Reset checks</button>
+        <button class="btn alt small" onclick="clearCompletedDictation()">Remove completed</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" id="practiceSection">
+    <div class="section-head"><h2 class="section-title">Practice Sheet</h2><span class="badge">printable</span></div>
+    <div class="card">
+      <textarea id="practiceSheet" class="notearea" style="min-height:220px" placeholder="Generated or manually written exercises will appear here…"></textarea>
+      <div class="row" style="margin-top:10px">
+        <button class="btn alt small" onclick="openPrint('practice')">Print student sheet</button>
+        <button class="btn alt small" onclick="openPrint('report')">Print student report</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2 class="section-title">Homework & Images</h2></div>
+    <div class="upload">
+      <input type="file" id="images" accept="image/*" multiple>
+      <div class="muted" style="margin-top:8px">Image previews stay in this session. When using ChatGPT Bridge, attach the same homework/test images in your ChatGPT message together with the copied prompt.</div>
+      <div id="previews" class="preview-grid"></div>
+    </div>
+  </div>
+
+  <div class="section" id="aiSection">
+    <div class="section-head"><h2 class="section-title">AI Teaching Assistant</h2></div>
+    <div class="ai">
+      <b>ChatGPT Bridge</b>
+      <p class="muted">No API needed. Build a complete prompt from this student's records, copy it into ChatGPT, then paste the AI result back here.</p>
+      <div class="grid" style="margin-top:14px">
+        <button class="btn" onclick="buildBridgePrompt('analyze')">1 · Build Analysis Prompt</button>
+        <button class="btn" onclick="buildBridgePrompt('practice')">Build Practice Prompt</button>
+        <button class="btn" onclick="buildBridgePrompt('dictation')">Build Dictation Prompt</button>
+        <button class="btn" onclick="buildBridgePrompt('plan')">Build Lesson Plan Prompt</button>
+      </div>
+      <div class="field">
+        <label style="color:#bbb">Prompt for ChatGPT</label>
+        <textarea id="bridgePrompt" style="background:#181818;color:#fff;border-color:#444;min-height:210px" placeholder="Choose a task above…"></textarea>
+      </div>
+      <div class="row">
+        <button class="btn small" onclick="copyBridgePrompt()">Copy for ChatGPT</button>
+        <button class="btn small" onclick="shareBridgePrompt()">Share / Open ChatGPT</button>
+      </div>
+      <div class="field">
+        <label style="color:#bbb">Paste ChatGPT result</label>
+        <textarea id="bridgeResult" style="background:#181818;color:#fff;border-color:#444;min-height:210px" placeholder="Paste the AI answer here…"></textarea>
+      </div>
+      <div class="row">
+        <button class="btn small" onclick="applyResult('weakness')">Apply → Weaknesses</button>
+        <button class="btn small" onclick="applyResult('practice')">Apply → Practice</button>
+        <button class="btn small" onclick="applyResult('plan')">Apply → Next Plan</button>
+        <button class="btn small" onclick="applyResult('dictation')">Apply → Dictation</button>
+      </div>
+      <hr style="border:0;border-top:1px solid #333;margin:18px 0">
+      <div class="field" style="margin-top:14px">
+        <label style="color:#bbb">Extra instruction</label>
+        <textarea id="aiInstruction" style="background:#181818;color:#fff;border-color:#444" placeholder="e.g. Generate 10 Grade 6 grammar questions, medium difficulty…"></textarea>
+      </div>
+      <div class="row">
+        <button class="btn small" onclick="localAI('analyze')">Analyze Weaknesses</button>
+        <button class="btn small" onclick="localAI('practice')">Generate Practice</button>
+        <button class="btn small" onclick="localAI('dictation')">Generate Dictation</button>
+        <button class="btn small" onclick="localAI('plan')">Plan Next Class</button>
+      </div>
+      <div class="ai-output" id="aiOutput"></div>
+      <div class="row" id="aiActions" style="margin-top:10px;display:none">
+        <button class="btn small" onclick="saveAIToPractice()">Save as Practice</button>
+        <button class="btn small" onclick="openPrint('practice')">Print Practice</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <button class="btn alt danger" onclick="deleteCurrent()">Delete student</button>
+  </div>
+</section>
+</main>
+</div>
+
+<div class="modal" id="studentModal">
+  <div class="sheet">
+    <div class="row between"><h2 id="studentTitle">Add Student</h2><button class="btn alt small" onclick="closeModal('studentModal')">Close</button></div>
+    <input type="hidden" id="studentId">
+    <div class="field"><label>Name</label><input id="name" placeholder="Student name"></div>
+    <div class="grid">
+      <div class="field"><label>Grade</label><input id="grade" placeholder="Grade 6"></div>
+      <div class="field"><label>Subject</label><input id="subject" placeholder="English"></div>
+    </div>
+    <div class="grid">
+      <div class="field"><label>Current score</label><input id="score" placeholder="75"></div>
+      <div class="field"><label>Target score</label><input id="target" placeholder="90"></div>
+    </div>
+    <div class="field"><label>Learning profile / parent goals</label><textarea id="profile" placeholder="Learning habits, personality, parent expectations…"></textarea></div>
+    <button class="btn" onclick="saveStudent()">Save student</button>
+  </div>
+</div>
+
+<div class="modal" id="classModal">
+  <div class="sheet">
+    <div class="row between"><h2 id="classTitle">Add Class</h2><button class="btn alt small" onclick="closeModal('classModal')">Close</button></div>
+    <input type="hidden" id="classId">
+    <div class="grid">
+      <div class="field"><label>Date</label><input type="date" id="cDate"></div>
+      <div class="field"><label>Hours</label><input type="number" step="0.5" min="0" id="cHours" value="2"></div>
+    </div>
+    <div class="field"><label>Content</label><textarea id="cContent" placeholder="What did you teach?"></textarea></div>
+    <div class="field"><label>Homework</label><textarea id="cHomework" placeholder="What should the student complete?"></textarea></div>
+    <div class="field"><label>Homework status</label>
+      <select id="cStatus">
+        <option>Assigned</option>
+        <option>Completed</option>
+        <option>Partly completed</option>
+        <option>Not completed</option>
+      </select>
+    </div>
+    <div class="field"><label>Teacher note</label><textarea id="cNote" placeholder="Performance, mistakes, attitude, next focus…"></textarea></div>
+    <button class="btn" onclick="saveClass()">Save class</button>
+  </div>
+</div>
+
+<div class="modal" id="dictModal">
+  <div class="sheet">
+    <div class="row between"><h2>Add Dictation Item</h2><button class="btn alt small" onclick="closeModal('dictModal')">Close</button></div>
+    <div class="field"><label>Word / phrase</label><input id="dictWord" placeholder="environment"></div>
+    <button class="btn" onclick="saveDictationItem()">Add item</button>
+  </div>
+</div>
+
+
+<div class="modal" id="printModal">
+  <div class="sheet">
+    <div class="row between"><h2>Print / Save as PDF</h2><button class="btn alt small" onclick="closeModal('printModal')">Close</button></div>
+    <p class="muted">Choose what you want to prepare. On iPhone, tap Print and use the system print preview; you can also save/share it as a PDF.</p>
+    <div class="grid">
+      <button class="btn soft" onclick="doPrint('report')">Student Report</button>
+      <button class="btn soft" onclick="doPrint('practice')">Practice Sheet</button>
+      <button class="btn soft" onclick="doPrint('dictation')">Dictation Sheet</button>
+      <button class="btn soft" onclick="doPrint('classes')">Class Records</button>
+    </div>
+  </div>
+</div>
+
+<div class="print-only" id="printArea"></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY='tutor_v2_data';
+const OLD_KEY='tutor_v1_data'; // keep same storage key so V2 data opens directly in V3
+const $=id=>document.getElementById(id);
+let current=null;
+
+function blank(){return {students:[]}}
+function loadData(){
+  try{
+    let v2=localStorage.getItem(KEY);
+    if(v2) return JSON.parse(v2);
+    let v1=localStorage.getItem(OLD_KEY);
+    if(v1){
+      let old=JSON.parse(v1);
+      old.students=(old.students||[]).map(s=>({
+        ...s,
+        profile:s.profile||'',
+        nextPlan:s.nextPlan||'',
+        dictationItems:(s.dictation||'').split(/\n+/).filter(Boolean).map((text,i)=>({id:String(Date.now()+i),text,done:false})),
+        classes:(s.classes||[]).map(c=>({...c,note:c.note||''}))
+      }));
+      localStorage.setItem(KEY,JSON.stringify(old));
+      return old;
+    }
+  }catch(e){}
+  return blank();
+}
+let data=loadData();
+
+function esc(x){return String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function toast(t){$('toast').textContent=t;$('toast').style.display='block';clearTimeout(window._toast);window._toast=setTimeout(()=>$('toast').style.display='none',1700)}
+function persist(msg){localStorage.setItem(KEY,JSON.stringify(data));render();if(msg)toast(msg)}
+function cur(){return data.students.find(s=>s.id===current)}
+function jumpTo(id){document.getElementById(id)?.scrollIntoView({behavior:'smooth',block:'start'})}
+
+function render(){
+  let totalClasses=data.students.reduce((a,s)=>a+(s.classes?.length||0),0);
+  let totalHours=data.students.reduce((a,s)=>a+(s.classes||[]).reduce((b,c)=>b+Number(c.hours||0),0),0);
+  $('summary').textContent=`${data.students.length} students · ${totalClasses} classes · ${fmt(totalHours)}h`;
+  renderStudents();
+  if(current) renderDetail();
+}
+function renderStudents(){
+  let q=$('search').value.trim().toLowerCase();
+  let arr=data.students.filter(s=>[s.name,s.grade,s.subject].join(' ').toLowerCase().includes(q));
+  $('empty').style.display=data.students.length?'none':'block';
+  $('students').innerHTML=arr.map(s=>{
+    let cs=s.classes||[], hrs=cs.reduce((a,c)=>a+Number(c.hours||0),0);
+    let last=cs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+    return `<div class="card student" onclick="openDetail('${s.id}')">
+      <div class="name">${esc(s.name)}</div>
+      <div class="muted">${[s.grade,s.subject].filter(Boolean).map(esc).join(' · ')||'No grade / subject yet'}</div>
+      <span class="pill">${cs.length} classes</span><span class="pill">${fmt(hrs)}h</span>
+      ${s.score?`<span class="pill">Score ${esc(s.score)}</span>`:''}
+      ${last?.date?`<div class="muted" style="margin-top:10px">Last class · ${esc(last.date)}</div>`:''}
+    </div>`
+  }).join('');
+  if(data.students.length && !arr.length) $('students').innerHTML='<div class="empty" style="grid-column:1/-1">No matching student.</div>';
+}
+function fmt(n){return Number.isInteger(Number(n))?String(Number(n)):Number(n).toFixed(1)}
+
+function openStudent(id=''){
+  let s=data.students.find(x=>x.id===id);
+  $('studentTitle').textContent=s?'Edit Student':'Add Student';
+  $('studentId').value=s?.id||'';
+  ['name','grade','subject','score','target','profile'].forEach(k=>$(k).value=s?.[k]||'');
+  $('studentModal').classList.add('show');
+}
+function closeModal(id){$(id).classList.remove('show')}
+function saveStudent(){
+  if(!$('name').value.trim())return toast('Please enter a name');
+  let id=$('studentId').value;
+  let obj={id:id||Date.now().toString(),name:$('name').value.trim(),grade:$('grade').value.trim(),subject:$('subject').value.trim(),score:$('score').value.trim(),target:$('target').value.trim(),profile:$('profile').value.trim()};
+  if(id){Object.assign(data.students.find(x=>x.id===id),obj)}
+  else{Object.assign(obj,{classes:[],weakness:'',nextPlan:'',dictationItems:[]});data.students.push(obj)}
+  closeModal('studentModal');persist('Student saved');
+}
+function openDetail(id){current=id;$('home').classList.add('hide');$('detail').classList.add('show');window.scrollTo(0,0);renderDetail()}
+function goHome(){current=null;$('detail').classList.remove('show');$('home').classList.remove('hide');render();window.scrollTo(0,0)}
+function editCurrent(){openStudent(current)}
+
+function renderDetail(){
+  let s=cur();if(!s)return;
+  let cs=s.classes||[];
+  $('dName').textContent=s.name;
+  $('dMeta').textContent=[s.grade,s.subject].filter(Boolean).join(' · ');
+  $('dClasses').textContent=cs.length;
+  $('dHours').textContent=fmt(cs.reduce((a,c)=>a+Number(c.hours||0),0));
+  $('dScore').textContent=s.score||'—';
+  $('dTarget').textContent=s.target||'—';
+  $('dProfile').textContent=s.profile||'No profile notes yet.';
+  $('weakness').value=s.weakness||'';
+  $('nextPlan').value=s.nextPlan||'';
+  $('practiceSheet').value=s.practiceSheet||'';
+  renderClasses(s);
+  renderDictation(s);
+}
+function renderClasses(s){
+  let cs=(s.classes||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  $('classList').innerHTML=cs.length?cs.map(c=>`<div class="classitem">
+    <div class="row between">
+      <b>${esc(c.date||'No date')}</b>
+      <div><span class="pill">${esc(c.hours||0)}h</span><span class="pill">${esc(c.status||'Assigned')}</span></div>
+    </div>
+    ${c.content?`<div class="class-content">${esc(c.content)}</div>`:''}
+    ${c.homework?`<div class="muted"><b>Homework:</b> ${esc(c.homework)}</div>`:''}
+    ${c.note?`<div class="muted" style="margin-top:5px"><b>Teacher note:</b> ${esc(c.note)}</div>`:''}
+    <div class="inline-actions">
+      <button class="btn alt small" onclick="editClass('${c.id}')">Edit</button>
+      <button class="btn alt small danger" onclick="deleteClass('${c.id}')">Delete</button>
+    </div>
+  </div>`).join(''):'<div class="muted">No classes recorded yet.</div>';
+}
+function openClass(){
+  $('classTitle').textContent='Add Class';$('classId').value='';
+  let d=new Date();$('cDate').value=new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  $('cHours').value='2';$('cContent').value='';$('cHomework').value='';$('cStatus').value='Assigned';$('cNote').value='';
+  $('classModal').classList.add('show');
+}
+function editClass(id){
+  let c=(cur().classes||[]).find(x=>x.id===id);if(!c)return;
+  $('classTitle').textContent='Edit Class';$('classId').value=c.id;
+  $('cDate').value=c.date||'';$('cHours').value=c.hours||'';$('cContent').value=c.content||'';$('cHomework').value=c.homework||'';$('cStatus').value=c.status||'Assigned';$('cNote').value=c.note||'';
+  $('classModal').classList.add('show');
+}
+function saveClass(){
+  let s=cur();if(!s)return;
+  s.classes=s.classes||[];
+  let id=$('classId').value;
+  let obj={id:id||Date.now().toString(),date:$('cDate').value,hours:$('cHours').value,content:$('cContent').value.trim(),homework:$('cHomework').value.trim(),status:$('cStatus').value,note:$('cNote').value.trim()};
+  if(id) Object.assign(s.classes.find(x=>x.id===id),obj); else s.classes.push(obj);
+  closeModal('classModal');persist('Class saved');
+}
+function deleteClass(id){
+  if(!confirm('Delete this class record?'))return;
+  let s=cur();s.classes=(s.classes||[]).filter(c=>c.id!==id);persist('Class deleted');
+}
+
+function autoSaveField(field,key){
+  let timer;
+  $(field).addEventListener('input',()=>{clearTimeout(timer);timer=setTimeout(()=>{let s=cur();if(!s)return;s[key]=$(field).value;localStorage.setItem(KEY,JSON.stringify(data));renderStudents();},450)})
+}
+autoSaveField('weakness','weakness');
+autoSaveField('nextPlan','nextPlan');
+autoSaveField('practiceSheet','practiceSheet');
+
+function renderDictation(s){
+  let items=s.dictationItems||[];
+  $('dictationList').innerHTML=items.length?items.map(i=>`<label class="checkrow ${i.done?'done':''}">
+    <input type="checkbox" ${i.done?'checked':''} onchange="toggleDictation('${i.id}',this.checked)">
+    <span style="flex:1">${esc(i.text)}</span>
+    <button type="button" class="btn alt small danger" onclick="event.preventDefault();event.stopPropagation();deleteDictationItem('${i.id}')">×</button>
+  </label>`).join(''):'<div class="muted">No dictation items yet.</div>';
+}
+function addDictationItem(){$('dictWord').value='';$('dictModal').classList.add('show');setTimeout(()=>$('dictWord').focus(),100)}
+function saveDictationItem(){
+  let text=$('dictWord').value.trim();if(!text)return toast('Enter a word or phrase');
+  let s=cur();s.dictationItems=s.dictationItems||[];s.dictationItems.push({id:Date.now().toString(),text,done:false});
+  closeModal('dictModal');persist('Added');
+}
+function toggleDictation(id,done){let i=(cur().dictationItems||[]).find(x=>x.id===id);if(i)i.done=done;persist()}
+function deleteDictationItem(id){cur().dictationItems=(cur().dictationItems||[]).filter(x=>x.id!==id);persist()}
+function resetDictation(){(cur().dictationItems||[]).forEach(i=>i.done=false);persist('Checks reset')}
+function clearCompletedDictation(){cur().dictationItems=(cur().dictationItems||[]).filter(i=>!i.done);persist('Completed items removed')}
+
+
+function studentContext(s){
+  let classes=(s.classes||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')).slice(0,5);
+  return [
+    `Student: ${s.name}`,
+    `Grade: ${s.grade||'Not recorded'}`,
+    `Subject: ${s.subject||'Not recorded'}`,
+    `Current score: ${s.score||'Not recorded'}`,
+    `Target score: ${s.target||'Not recorded'}`,
+    `Learning profile / parent goals: ${s.profile||'Not recorded'}`,
+    `Known weaknesses: ${s.weakness||'Not recorded'}`,
+    `Recent classes:\n${classes.length?classes.map(c=>`- ${c.date||''} (${c.hours||0}h): ${c.content||''}; Homework: ${c.homework||''}; Status: ${c.status||''}; Teacher note: ${c.note||''}`).join('\n'):'None recorded'}`,
+    `Unfinished dictation: ${(s.dictationItems||[]).filter(i=>!i.done).map(i=>i.text).join(', ')||'None'}`,
+    `Selected image files in Tutor: ${$('images')?.files?.length ? [...$('images').files].map(f=>f.name).join(', ') : 'None selected'}`
+  ].join('\n');
+}
+function buildBridgePrompt(type){
+  let s=cur(); if(!s)return;
+  let extra=($('aiInstruction')?.value||'').trim();
+  let task='';
+  if(type==='analyze') task=`Analyze this student's learning situation. If I attach homework/test images, inspect them carefully. Identify recurring mistakes and underlying weak skills, separate knowledge gaps from careless errors, rank the top priorities, and give concise teaching advice. End with a section titled "WEAKNESSES TO SAVE" containing only a clean bullet list I can paste into my student record.`;
+  if(type==='practice') task=`Create a targeted practice sheet based on the student's weaknesses and recent lessons. Match the student's grade. Include a sensible progression from basic recall to application and error correction. Do not merely describe question types: write the actual questions. Put the ANSWER KEY in a clearly separated section at the end so I can remove it before printing for the student.`;
+  if(type==='dictation') task=`Create the next English dictation list for this student using recent lesson content, unfinished words, and likely spelling/vocabulary weaknesses. Give 10–20 useful words or short phrases unless the context suggests fewer. Output one item per line and avoid unnecessary explanation.`;
+  if(type==='plan') task=`Design the next tutoring lesson. Give a realistic minute-by-minute plan, review priorities, teaching focus, guided practice, independent practice, homework, and what I should check next time. Keep it practical for a private tutor.`;
+  let prompt=`You are my private-tutoring teaching assistant.\n\n${task}\n\nSTUDENT RECORD\n${studentContext(s)}`;
+  if(extra) prompt+=`\n\nEXTRA INSTRUCTION\n${extra}`;
+  prompt+=`\n\nImportant: If homework/test images are attached to this ChatGPT message, use evidence from the images together with the student record. Do not invent mistakes that are not visible or recorded.`;
+  $('bridgePrompt').value=prompt;
+  toast('Prompt ready');
+}
+async function copyText(text){
+  try{await navigator.clipboard.writeText(text);return true}catch(e){
+    let ta=document.createElement('textarea');ta.value=text;document.body.appendChild(ta);ta.select();
+    let ok=document.execCommand('copy');ta.remove();return ok;
+  }
+}
+async function copyBridgePrompt(){
+  let text=$('bridgePrompt').value.trim();if(!text)return toast('Build a prompt first');
+  await copyText(text);toast('Copied — paste it into ChatGPT');
+}
+async function shareBridgePrompt(){
+  let text=$('bridgePrompt').value.trim();if(!text)return toast('Build a prompt first');
+  if(navigator.share){
+    try{await navigator.share({title:'Tutor prompt',text});return}catch(e){}
+  }
+  await copyText(text);toast('Copied — open ChatGPT and paste');
+}
+function applyResult(type){
+  let text=$('bridgeResult').value.trim();if(!text)return toast('Paste the ChatGPT result first');
+  let s=cur();if(!s)return;
+  if(type==='weakness'){s.weakness=text;$('weakness').value=text}
+  if(type==='practice'){s.practiceSheet=text;$('practiceSheet').value=text}
+  if(type==='plan'){s.nextPlan=text;$('nextPlan').value=text}
+  if(type==='dictation'){
+    let lines=text.split(/\n+/).map(x=>x.replace(/^\s*(?:[-•*]|\d+[.)])\s*/,'').trim()).filter(Boolean);
+    s.dictationItems=(s.dictationItems||[]).concat(lines.map((x,i)=>({id:String(Date.now()+i),text:x,done:false})));
+  }
+  localStorage.setItem(KEY,JSON.stringify(data));renderDetail();toast('Applied to student record');
+}
+
+let lastAIText='';
+function localAI(type){
+  let s=cur();if(!s)return;
+  let weak=(s.weakness||'').trim();
+  let instruction=($('aiInstruction')?.value||'').trim();
+  let recent=(s.classes||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''))[0];
+  let out='';
+  if(type==='analyze'){
+    out = `STUDENT ANALYSIS — ${s.name}\n\n`;
+    out += weak ? `Recorded weaknesses:\n${weak}\n\n` : `No weakness notes have been entered yet.\n\n`;
+    if(recent) out += `Most recent lesson:\n${recent.content||'No content note'}\nHomework: ${recent.homework||'None recorded'}\nTeacher note: ${recent.note||'None'}\n\n`;
+    out += `Teaching priorities:\n1. Turn each weakness into one observable skill.\n2. Use a short diagnostic before reteaching.\n3. Record repeated errors, not just one-off mistakes.\n4. Recheck the same skill after guided practice.`;
+  } else if(type==='practice'){
+    let focus=weak||instruction||'the latest lesson content';
+    out = `PRACTICE — ${s.name}\nFocus: ${focus}\n\n1. Warm-up: Write 3 key rules or examples from today's focus.\n\n2. Basic check: Complete 3 short questions on ${focus}.\n\n3. Application: Complete 4 medium questions that require choosing or applying the correct rule.\n\n4. Error correction: Find and correct 2 mistakes related to ${focus}.\n\n5. Challenge: Explain one answer in your own words.\n\nTeacher note: V3 is currently generating an offline template. Once the AI backend is connected, these placeholders become actual tailored questions and an answer key.`;
+  } else if(type==='dictation'){
+    let existing=(s.dictationItems||[]).filter(x=>!x.done).map(x=>x.text);
+    out = `NEXT DICTATION — ${s.name}\n\n`;
+    out += existing.length ? existing.map((x,i)=>`${i+1}. ${x}`).join('\n') : `No unfinished dictation words are saved yet.`;
+    out += `\n\nWhen the AI backend is connected, it can combine unfinished words + recent lesson vocabulary + spelling errors from uploaded homework.`;
+  } else if(type==='plan'){
+    out = `NEXT CLASS PLAN — ${s.name}\n\n1. 5 min — Retrieval warm-up${recent?.content?`: ${recent.content}`:''}\n2. 10 min — Diagnostic check${weak?`: ${weak}`:''}\n3. 15 min — Targeted explanation and examples\n4. 20 min — Guided practice\n5. 15 min — Independent practice\n6. 5 min — Error review + homework\n`;
+    if(instruction) out += `\nExtra instruction: ${instruction}`;
+  }
+  lastAIText=out;
+  $('aiOutput').textContent=out;$('aiOutput').style.display='block';
+  $('aiActions').style.display='flex';
+}
+function saveAIToPractice(){
+  let s=cur();if(!s||!lastAIText)return;
+  s.practiceSheet=lastAIText;$('practiceSheet').value=lastAIText;
+  localStorage.setItem(KEY,JSON.stringify(data));toast('Saved to Practice Sheet');
+}
+function openPrint(type){
+  if(type){doPrint(type);return}
+  $('printModal').classList.add('show');
+}
+function printHeader(s,title){
+  return `<div class="print-sheet"><h1>${esc(title)}</h1><div class="print-meta"><b>${esc(s.name)}</b> · ${esc(s.grade||'')} ${s.subject?'· '+esc(s.subject):''} · ${new Date().toLocaleDateString()}</div>`;
+}
+function doPrint(type){
+  let s=cur();if(!s)return;
+  closeModal('printModal');
+  let html=printHeader(s,type==='report'?'Student Report':type==='practice'?'Practice Sheet':type==='dictation'?'Dictation Sheet':'Class Records');
+  if(type==='report'){
+    let hrs=(s.classes||[]).reduce((a,c)=>a+Number(c.hours||0),0);
+    html+=`<div class="print-box"><b>Current score:</b> ${esc(s.score||'—')} &nbsp;&nbsp; <b>Target:</b> ${esc(s.target||'—')} &nbsp;&nbsp; <b>Classes:</b> ${(s.classes||[]).length} &nbsp;&nbsp; <b>Hours:</b> ${fmt(hrs)}</div>`;
+    html+=`<h2>Learning Profile</h2><div class="print-box">${esc(s.profile||'—')}</div>`;
+    html+=`<h2>Weaknesses</h2><div class="print-box">${esc(s.weakness||'—')}</div>`;
+    html+=`<h2>Next Class Plan</h2><div class="print-box">${esc(s.nextPlan||'—')}</div>`;
+  }
+  if(type==='practice'){
+    html+=`<div class="print-box">${esc(s.practiceSheet||'No practice sheet has been created yet.')}</div>`;
+  }
+  if(type==='dictation'){
+    let items=(s.dictationItems||[]).filter(i=>!i.done);
+    html+=`<div class="print-box">${items.length?items.map((i,n)=>`${n+1}. ${esc(i.text)}`).join('<br><br>'):'No dictation items.'}</div>`;
+  }
+  if(type==='classes'){
+    let cs=(s.classes||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    html+=cs.length?cs.map(c=>`<div class="print-class"><b>${esc(c.date||'No date')} · ${esc(c.hours||0)}h</b><div>${esc(c.content||'')}</div>${c.homework?`<div><b>Homework:</b> ${esc(c.homework)}</div>`:''}${c.note?`<div><b>Teacher note:</b> ${esc(c.note)}</div>`:''}</div>`).join(''):`<div class="print-box">No class records.</div>`;
+  }
+  html+='</div>';
+  $('printArea').innerHTML=html;
+  setTimeout(()=>window.print(),80);
+}
+
+function deleteCurrent(){
+  if(confirm('Delete this student and all records?')){
+    data.students=data.students.filter(s=>s.id!==current);current=null;localStorage.setItem(KEY,JSON.stringify(data));goHome();toast('Student deleted');
+  }
+}
+$('images').addEventListener('change',e=>{
+  $('previews').innerHTML='';
+  [...e.target.files].slice(0,12).forEach(f=>{
+    let im=document.createElement('img');im.src=URL.createObjectURL(f);im.className='preview';$('previews').appendChild(im)
+  })
+});
+$('search').addEventListener('input',renderStudents);
+$('addBtn').onclick=()=>openStudent();
+
+$('exportBtn').onclick=()=>{
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='tutor-backup.json';a.click();URL.revokeObjectURL(a.href);toast('Backup exported');
+};
+
+document.querySelectorAll('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('show')}));
+render();
+</script>
+</body>
+</html>
